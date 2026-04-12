@@ -2,3 +2,12 @@ node_modules
 dist
 .DS_Store
 npm-debug.log*
+apps/*/dist
+packages/*/dist
+*.tsbuildinfo
+apps/web/src/**/*.js
+apps/web/src/**/*.js.map
+apps/web/src/**/*.d.ts
+apps/web/vite.config.js
+apps/web/vite.config.js.map
+apps/web/vite.config.d.ts
