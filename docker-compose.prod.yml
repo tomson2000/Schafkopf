@@ -1,0 +1,52 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      CORS_ORIGIN: https://schafkopf.argumentit.de
+    expose:
+      - "3001"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.schafkopf-server.rule=Host(`schafkopf.argumentit.de`) && (PathPrefix(`/socket.io`) || Path(`/health`))
+      - traefik.http.routers.schafkopf-server.entrypoints=websecure
+      - traefik.http.routers.schafkopf-server.tls=true
+      - traefik.http.routers.schafkopf-server.tls.certresolver=letsencrypt
+      - traefik.http.routers.schafkopf-server.priority=100
+      - traefik.http.services.schafkopf-server.loadbalancer.server.port=3001
+    networks:
+      - internal
+      - traefik
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      - server
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.schafkopf-web.rule=Host(`schafkopf.argumentit.de`)
+      - traefik.http.routers.schafkopf-web.entrypoints=websecure
+      - traefik.http.routers.schafkopf-web.tls=true
+      - traefik.http.routers.schafkopf-web.tls.certresolver=letsencrypt
+      - traefik.http.routers.schafkopf-web.priority=10
+      - traefik.http.services.schafkopf-web.loadbalancer.server.port=3000
+    networks:
+      - internal
+      - traefik
+
+networks:
+  internal:
+    driver: bridge
+  traefik:
+    external: true
+    name: traefik

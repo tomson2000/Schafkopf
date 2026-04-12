@@ -1,0 +1,15 @@
+{
+  "name": "schafkopf-online",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @schafkopf/shared && npm run build -w @schafkopf/server && npm run build -w @schafkopf/web",
+    "dev": "docker compose up --build",
+    "lint": "npm run build",
+    "start": "npm run start -w @schafkopf/server"
+  }
+}

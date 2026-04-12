@@ -1,0 +1,22 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1200" fill="#6F4620"/>
+  <g opacity="0.42">
+    <path d="M-40 72C90 40 190 102 316 78C430 56 528 14 662 40C762 60 860 124 984 108C1098 94 1186 28 1260 12" stroke="#9B6A35" stroke-width="12" stroke-linecap="round"/>
+    <path d="M-24 146C126 102 214 174 340 158C490 138 566 88 698 110C822 130 930 194 1038 184C1126 176 1188 132 1260 118" stroke="#4E2F16" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-30 244C78 214 182 262 286 252C426 240 548 186 664 202C804 222 912 292 1038 286C1124 282 1182 254 1260 228" stroke="#A87741" stroke-width="14" stroke-linecap="round"/>
+    <path d="M-16 346C102 332 186 374 300 366C438 356 532 300 664 314C804 330 920 404 1048 398C1130 394 1194 354 1262 340" stroke="#513219" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-28 446C112 426 214 484 330 476C482 468 594 406 724 430C840 452 948 522 1060 520C1130 518 1198 484 1262 468" stroke="#9A6935" stroke-width="12" stroke-linecap="round"/>
+    <path d="M-18 548C100 530 220 582 334 576C474 570 578 516 714 530C842 544 950 610 1068 604C1134 600 1202 574 1264 558" stroke="#4C2C13" stroke-width="9" stroke-linecap="round"/>
+    <path d="M-22 658C118 626 218 696 350 686C484 676 600 622 732 646C848 666 954 740 1068 734C1142 730 1198 692 1266 674" stroke="#AB7B46" stroke-width="13" stroke-linecap="round"/>
+    <path d="M-20 766C96 746 196 790 320 790C458 790 592 734 724 748C838 760 936 824 1052 820C1130 816 1196 784 1260 770" stroke="#56341A" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-12 876C124 844 236 902 356 890C500 876 610 830 740 848C864 864 952 926 1068 920C1144 916 1208 880 1268 864" stroke="#9B6A34" stroke-width="12" stroke-linecap="round"/>
+    <path d="M-18 980C112 960 206 1018 332 1010C460 1002 574 958 708 972C848 986 964 1050 1080 1042C1148 1038 1208 1006 1264 992" stroke="#4B2D16" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-30 1088C78 1054 198 1114 312 1108C450 1102 564 1060 692 1074C820 1088 936 1150 1052 1144C1130 1140 1192 1112 1260 1094" stroke="#AA7944" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.2">
+    <ellipse cx="280" cy="210" rx="96" ry="42" fill="#4C2C14"/>
+    <ellipse cx="830" cy="486" rx="120" ry="46" fill="#A97946"/>
+    <ellipse cx="520" cy="842" rx="88" ry="38" fill="#4C2C14"/>
+    <ellipse cx="1008" cy="968" rx="110" ry="44" fill="#A97946"/>
+  </g>
+</svg>
