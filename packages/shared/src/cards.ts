@@ -1,4 +1,4 @@
-import { Card, Rank, Suit } from "./types.js";
+import { Card, Contract, Rank, Suit } from "./types.js";
 
 const SUITS: Suit[] = ["eichel", "gras", "herz", "schelln"];
 const RANKS: Rank[] = ["7", "8", "9", "U", "O", "K", "10", "A"];
@@ -40,14 +40,53 @@ export function shuffle<T>(items: T[], random = Math.random): T[] {
   return next;
 }
 
-export function sortCards(cards: Card[]): Card[] {
+export function sortCards(cards: Card[], contract?: Contract): Card[] {
   const suitOrder: Suit[] = ["eichel", "gras", "herz", "schelln"];
-  const rankOrder: Rank[] = ["7", "8", "9", "K", "10", "A", "U", "O"];
+  const rankOrder: Rank[] = ["A", "10", "K", "O", "U", "9", "8", "7"];
   return [...cards].sort((a, b) => {
+    if (contract) {
+      const aTrump = isSortTrump(a, contract);
+      const bTrump = isSortTrump(b, contract);
+      if (aTrump !== bTrump) {
+        return aTrump ? -1 : 1;
+      }
+      if (aTrump && bTrump) {
+        return trumpSortValue(a, contract) - trumpSortValue(b, contract);
+      }
+    }
+
     const suitDiff = suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
     if (suitDiff !== 0) {
       return suitDiff;
     }
     return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
   });
+}
+
+function isSortTrump(card: Card, contract: Contract): boolean {
+  if (card.rank === "O") {
+    return true;
+  }
+  if (card.rank === "U") {
+    return contract.kind !== "geier";
+  }
+  if (contract.kind === "geier" || contract.kind === "wenz") {
+    return false;
+  }
+  if (contract.kind === "farbwenz" || contract.kind === "solo" || contract.kind === "farbsolo") {
+    return card.suit === contract.suit;
+  }
+  return card.suit === "herz";
+}
+
+function trumpSortValue(card: Card, contract: Contract): number {
+  const suitOrder: Suit[] = ["eichel", "gras", "herz", "schelln"];
+  const rankOrder: Rank[] = ["A", "10", "K", "9", "8", "7"];
+  if (card.rank === "O") {
+    return suitOrder.indexOf(card.suit);
+  }
+  if (card.rank === "U") {
+    return 10 + suitOrder.indexOf(card.suit);
+  }
+  return 20 + rankOrder.indexOf(card.rank);
 }

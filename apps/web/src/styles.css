@@ -606,7 +606,7 @@ select {
   display: grid;
   justify-items: center;
   gap: 0.35rem;
-  animation: trick-drop 260ms ease both;
+  animation: trick-drop 520ms cubic-bezier(0.18, 0.88, 0.26, 1.08) both;
 }
 
 .trick-card.from-top {
@@ -626,7 +626,8 @@ select {
 }
 
 .trick-card.resolving {
-  animation: trick-collect 520ms ease both;
+  animation: trick-drop 520ms cubic-bezier(0.18, 0.88, 0.26, 1.08) both;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.34));
 }
 
 .trick-player {
@@ -754,6 +755,17 @@ select {
   background: transparent;
 }
 
+.image-card {
+  background: #f7efe1;
+}
+
+.card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .card-svg {
   display: block;
   width: 100%;
@@ -788,11 +800,40 @@ select {
   background: rgba(5, 10, 8, 0.7);
   border: 1px solid rgba(255, 249, 224, 0.1);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+  will-change: transform;
 }
 
-.action-panel h3 {
-  margin: 0 0 0.65rem;
+.action-panel.dragging {
+  box-shadow: 0 28px 48px rgba(0, 0, 0, 0.34);
+}
+
+.dialog-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin: -0.15rem -0.1rem 0.65rem;
+  padding: 0.2rem 0.2rem 0.45rem;
+  border-bottom: 1px solid rgba(255, 239, 208, 0.08);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.dialog-handle:active {
+  cursor: grabbing;
+}
+
+.dialog-handle h3 {
+  margin: 0;
   font-size: 1rem;
+}
+
+.dialog-handle span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .action-grid {
@@ -896,6 +937,29 @@ select {
   .action-panel {
     width: min(100%, 520px);
     margin-top: -1rem;
+    max-height: min(44dvh, 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .dialog-handle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
+    background: linear-gradient(180deg, rgba(5, 10, 8, 0.96), rgba(5, 10, 8, 0.78));
+  }
+
+  .dialog-handle h3 {
+    position: sticky;
+    top: 0;
+  }
+
+  .action-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.5rem;
   }
 }
 
@@ -924,43 +988,33 @@ select {
 @keyframes trick-drop {
   from {
     opacity: 0;
-    transform: translate(var(--trick-x, 0), var(--trick-y, -14px)) scale(0.92);
+    transform: translate(var(--trick-x, 0), var(--trick-y, -14px)) rotate(var(--trick-rotate, 0deg)) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) rotate(0deg) scale(1);
   }
 }
 
-@keyframes trick-collect {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  65% {
-    opacity: 1;
-    transform: translateY(0) scale(1.03);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-18px) scale(0.88);
-  }
-}
 
 .trick-card.from-top {
-  --trick-y: -54px;
+  --trick-y: -210px;
+  --trick-rotate: 7deg;
 }
 
 .trick-card.from-right {
-  --trick-x: 54px;
+  --trick-x: 260px;
+  --trick-rotate: -9deg;
 }
 
 .trick-card.from-bottom {
-  --trick-y: 54px;
+  --trick-y: 230px;
+  --trick-rotate: -6deg;
 }
 
 .trick-card.from-left {
-  --trick-x: -54px;
+  --trick-x: -260px;
+  --trick-rotate: 9deg;
 }
 
 @keyframes float-in {

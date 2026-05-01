@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import {
   Card,
@@ -9,14 +9,29 @@ import {
   Suit
 } from "@schafkopf/shared";
 import cardBg from "./assets/card-bg.svg";
-import cardBack from "./assets/card-back.svg";
 import suitEichel from "./assets/suit-eichel.svg";
 import suitGras from "./assets/suit-gras.svg";
 import suitHerz from "./assets/suit-herz.svg";
 import suitSchelln from "./assets/suit-schelln.svg";
 import { CardSvg } from "./components/CardSvg";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? (typeof window !== "undefined" ? window.location.origin : "http://localhost:3001");
+function resolveServerUrl() {
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
+  }
+  if (typeof window === "undefined") {
+    return "http://localhost:3001";
+  }
+
+  const { protocol, hostname, origin, port } = window.location;
+  if (port === "3000") {
+    return `${protocol}//${hostname}:3001`;
+  }
+
+  return origin;
+}
+
+const SERVER_URL = resolveServerUrl();
 const socket: Socket = io(SERVER_URL, { autoConnect: true });
 
 const allContracts: Contract[] = [
@@ -155,6 +170,7 @@ export function App() {
   const lastCompletedTrick = state.round.completedTricks[state.round.completedTricks.length - 1];
   const recentWinnerId = state.round.currentTrick.cards.length === 0 ? lastCompletedTrick?.winnerId : undefined;
   const trickNumber = state.round.completedTricks.length + (state.round.currentTrick.cards.length > 0 ? 1 : 0);
+  const callerName = state.players.find((player) => player.id === state.round.contract?.callerId)?.name;
 
   return (
     <main className="table-page">
@@ -167,7 +183,7 @@ export function App() {
           <div className="status-chip">{phaseLabel(state.round.phase)}</div>
         </div>
         <p className="contract-label">
-          {state.round.contract ? `Spiel: ${formatContract(state.round.contract)}` : "Noch kein Spiel angesagt"}
+          {state.round.contract ? `Spiel: ${formatContract(state.round.contract)}${callerName ? ` von ${callerName}` : ""}` : "Noch kein Spiel angesagt"}
         </p>
         <div className="score-grid">
           {state.players.map((player) => (
@@ -233,7 +249,6 @@ export function App() {
           <div className="felt-ring" />
           <div className={`phase-banner phase-${state.round.phase}`}>
             <span>{phaseLabel(state.round.phase)}</span>
-            <strong>{state.round.contract ? formatContract(state.round.contract) : "Warten auf Spielstart"}</strong>
           </div>
           <div className="trick-counter">Stich {trickNumber}/8</div>
           <div className="trick-grid">
@@ -253,8 +268,7 @@ export function App() {
             ))}
           </div>
           {state.round.phase === "bidding" && isTurn ? (
-            <div className="action-panel">
-              <h3>Spiel ansagen</h3>
+            <DraggableDialog title="Spiel ansagen">
               <div className="action-grid">
                 {availableBidOptions.map((contract) => (
                   <button key={formatContract(contract)} onClick={() => actions.sendAction({ type: "bid", contract })}>
@@ -262,11 +276,10 @@ export function App() {
                   </button>
                 ))}
               </div>
-            </div>
+            </DraggableDialog>
           ) : null}
           {state.round.phase === "doubling" && isTurn ? (
-            <div className="action-panel">
-              <h3>Ansagen</h3>
+            <DraggableDialog title="Ansagen">
               <div className="action-grid compact">
                 {["pass", "kontra", "retour", "stoss", "spritze"].map((declaration) => (
                   <button
@@ -277,7 +290,7 @@ export function App() {
                   </button>
                 ))}
               </div>
-            </div>
+            </DraggableDialog>
           ) : null}
         </div>
 
@@ -366,6 +379,94 @@ function ConfigPanel({
   );
 }
 
+function DraggableDialog({ title, children }: { title: string; children: ReactNode }) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const dragStartRef = useRef<{ pointerId: number; left: number; top: number; width: number; height: number; x: number; y: number } | null>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      dragStartRef.current = null;
+    };
+  }, []);
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const panel = panelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const rect = panel.getBoundingClientRect();
+    dragStartRef.current = {
+      pointerId: event.pointerId,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      x: event.clientX,
+      y: event.clientY
+    };
+    setDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragStartRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const margin = 8;
+    const nextLeft = clamp(drag.left + (event.clientX - drag.x), margin, window.innerWidth - drag.width - margin);
+    const nextTop = clamp(drag.top + (event.clientY - drag.y), margin, window.innerHeight - drag.height - margin);
+
+    setOffset({
+      x: nextLeft - drag.left,
+      y: nextTop - drag.top
+    });
+  }
+
+  function handlePointerEnd(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragStartRef.current || dragStartRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    dragStartRef.current = null;
+    setDragging(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  return (
+    <div
+      ref={panelRef}
+      className={`action-panel ${dragging ? "dragging" : ""}`}
+      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+    >
+      <div
+        className="dialog-handle"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+      >
+        <h3>{title}</h3>
+        <span>Verschieben</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+}
+
 function Seat({
   player,
   position,
@@ -398,6 +499,21 @@ function Seat({
 }
 
 function CardFace({ card }: { card: Card }) {
+  const [imageAvailable, setImageAvailable] = useState(true);
+
+  if (imageAvailable) {
+    return (
+      <div className="card-face image-card">
+        <img
+          className="card-image"
+          src={getCardImagePath(card)}
+          alt={`${suitNames[card.suit]} ${card.rank}`}
+          onError={() => setImageAvailable(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="card-face svg-card">
       <CardSvg card={card} className="card-svg" />
@@ -405,12 +521,29 @@ function CardFace({ card }: { card: Card }) {
   );
 }
 
+const rankImageNames: Record<Card["rank"], string> = {
+  "7": "7",
+  "8": "8",
+  "9": "9",
+  "10": "10",
+  U: "unter",
+  O: "ober",
+  K: "koenig",
+  A: "ass"
+};
+
+function getCardImagePath(card: Card) {
+  return `/cards/${card.suit}-${rankImageNames[card.rank]}.png`;
+}
+
+const cardBackImagePath = "/cards/rückseite.png";
+
 function CardBack({ offset }: { offset: number }) {
   return (
     <div
       className="card-back"
       style={{
-        backgroundImage: `url(${cardBack})`,
+        backgroundImage: `url(${cardBackImagePath})`,
         transform: `translateX(${offset * 10}px) translateY(${offset * 2}px) rotate(${offset * 2 - 3}deg)`
       }}
     />

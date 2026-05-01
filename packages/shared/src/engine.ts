@@ -123,7 +123,7 @@ export function startRound(lobby: LobbyState, random = Math.random): LobbyState 
   playerIds.forEach((id, index) => {
     hands[id] = sortCards(deck.slice(index * 8, index * 8 + 8));
   });
-  const firstPlayer = playerIds[(dealerIndex + 1) % 4];
+  const firstPlayer = playerIds[(dealerIndex - 1 + playerIds.length) % playerIds.length];
   return {
     ...filled,
     round: {
@@ -154,12 +154,12 @@ export function startRound(lobby: LobbyState, random = Math.random): LobbyState 
 
 function nextPlayerId(players: Player[], playerId: string): string {
   const currentIndex = players.findIndex((player) => player.id === playerId);
-  return players[(currentIndex + 1 + players.length) % players.length].id;
+  return players[(currentIndex - 1 + players.length) % players.length].id;
 }
 
 function previousPlayerId(players: Player[], playerId: string): string {
   const currentIndex = players.findIndex((player) => player.id === playerId);
-  return players[(currentIndex - 1 + players.length) % players.length].id;
+  return players[(currentIndex + 1 + players.length) % players.length].id;
 }
 
 export function applyAction(lobby: LobbyState, playerId: string, action: PlayerAction): LobbyState {
@@ -213,7 +213,7 @@ function fallbackToRamsch(lobby: LobbyState): LobbyState {
   if (!lobby.config.rules.allowRamsch) {
     return startRound(lobby);
   }
-  const firstPlayer = lobby.players[(lobby.round.dealerIndex + 1) % 4].id;
+  const firstPlayer = lobby.players[(lobby.round.dealerIndex - 1 + lobby.players.length) % lobby.players.length].id;
   return setupContract(lobby, firstPlayer, {
     kind: "ramsch",
     callerId: firstPlayer
@@ -339,6 +339,22 @@ function applyPlayedCard(lobby: LobbyState, playerId: string, cardId?: string): 
       }
     };
   }
+  return {
+    ...lobby,
+    round: {
+      ...lobby.round,
+      hands,
+      currentTrick,
+      turnPlayerId: undefined
+    }
+  };
+}
+
+export function resolveCurrentTrick(lobby: LobbyState): LobbyState {
+  const currentTrick = lobby.round.currentTrick;
+  if (lobby.round.phase !== "playing" || currentTrick.cards.length !== 4 || !lobby.round.contract) {
+    return lobby;
+  }
   const winnerId = determineTrickWinner(currentTrick.cards, lobby.round.contract!);
   const finishedTrick = { ...currentTrick, winnerId };
   const completedTricks = [...lobby.round.completedTricks, finishedTrick];
@@ -357,7 +373,7 @@ function applyPlayedCard(lobby: LobbyState, playerId: string, cardId?: string): 
     matchScores,
     round: {
       ...lobby.round,
-      hands,
+      hands: lobby.round.hands,
       currentTrick: {
         leaderId: winnerId,
         cards: []
@@ -379,7 +395,7 @@ export function getPublicState(lobby: LobbyState, selfId: string): PublicState {
     players: lobby.players.map((player) => ({
       ...player,
       handCount: lobby.round.hands[player.id]?.length ?? 0,
-      hand: player.id === selfId ? sortCards(lobby.round.hands[player.id] ?? []) : undefined
+      hand: player.id === selfId ? sortCards(lobby.round.hands[player.id] ?? [], lobby.round.contract) : undefined
     })),
     matchScores: lobby.matchScores,
     config: lobby.config,

@@ -13,8 +13,11 @@ import {
   fillBots,
   getPublicState,
   replaceDisconnectedWithBot,
+  resolveCurrentTrick,
   startRound
 } from "@schafkopf/shared";
+
+const TRICK_RESOLVE_DELAY_MS = 5000;
 
 const app = express();
 app.use(cors());
@@ -139,7 +142,24 @@ function processAction(roomCode: string, playerId: string, action: PlayerAction)
   const updated = applyAction(lobby, playerId, action);
   rooms.set(roomCode, updated);
   emitState(roomCode);
+  if (action.type === "play" && updated.round.currentTrick.cards.length === 4) {
+    scheduleTrickResolution(roomCode);
+    return;
+  }
   scheduleBots(roomCode);
+}
+
+function scheduleTrickResolution(roomCode: string) {
+  setTimeout(() => {
+    const latest = rooms.get(roomCode);
+    if (!latest || latest.round.currentTrick.cards.length !== 4) {
+      return;
+    }
+    const resolved = resolveCurrentTrick(latest);
+    rooms.set(roomCode, resolved);
+    emitState(roomCode);
+    scheduleBots(roomCode);
+  }, TRICK_RESOLVE_DELAY_MS);
 }
 
 function scheduleBots(roomCode: string) {
